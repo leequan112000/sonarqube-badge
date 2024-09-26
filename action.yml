@@ -3,7 +3,7 @@ description: 'SonarQube Badge'
 inputs:
   github-token:
     description: 'GitHub token'
-    required: true
+    required: false
   directory:
     description: 'Directory where badges will be generated'
     required: false
@@ -66,7 +66,6 @@ runs:
       with:
         script: |
           const { markdown } = process.env;
-          const { context } = require('@actions/github');
           const octokit = require('@actions/github').getOctokit(process.env.GITHUB_TOKEN);
 
           await octokit.rest.issues.createComment({
