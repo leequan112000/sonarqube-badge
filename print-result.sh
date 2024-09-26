@@ -31,18 +31,18 @@ getLabel() {
 
 # sonarqube link
 getLink() {
-  bugs="/component_measures?id=$SONAR_PROJECT&metric=bugs"; # Number of bug issues. (number)
-  code_smells="/component_measures?id=$SONAR_PROJECT&metric=code_smells"; # Total count of Code Smell issues. (number)
-  coverage="/component_measures?id=$SONAR_PROJECT&metric=coverage"; # Coverage (percentage)
-  duplicated_lines_density="/component_measures?id=$SONAR_PROJECT&metric=duplicated_lines_density"; # duplicated_lines / lines * 100 (percentage)
-  ncloc="/component_measures?id=$SONAR_PROJECT&metric=ncloc"; # Lines of code (number k,m suffix)
-  sqale_rating="/component_measures?id=$SONAR_PROJECT&metric=sqale_rating"; # Maintainability Rating
-  alert_status="/dashboard?id=$SONAR_PROJECT"; # Quality Gate Status
-  reliability_rating="/component_measures?id=$SONAR_PROJECT&metric=reliability_rating"; # Reliability Rating (A-E)
-  security_hotspots="/component_measures?id=$SONAR_PROJECT&metric=security_hotspots"; # Security Hotspots. (number)
-  security_rating="/component_measures?id=$SONAR_PROJECT&metric=security_rating"; # Security Rating (A-E)
-  sqale_index="/component_measures?id=$SONAR_PROJECT&metric=sqale_index"; # Technical Debt
-  vulnerabilities="/component_measures?id=$SONAR_PROJECT&metric=vulnerabilities"; # Number of vulnerability issues. (number)
+  bugs="/project_badges/measure?project=$SONAR_PROJECT&metric=bugs"; # Number of bug issues. (number)
+  code_smells="/project_badges/measure?project=$SONAR_PROJECT&metric=code_smells"; # Total count of Code Smell issues. (number)
+  coverage="/project_badges/measure?project=$SONAR_PROJECT&metric=coverage"; # Coverage (percentage)
+  duplicated_lines_density="/project_badges/measure?project=$SONAR_PROJECT&metric=duplicated_lines_density"; # duplicated_lines / lines * 100 (percentage)
+  ncloc="/project_badges/measure?project=$SONAR_PROJECT&metric=ncloc"; # Lines of code (number k,m suffix)
+  sqale_rating="/project_badges/measure?project=$SONAR_PROJECT&metric=sqale_rating"; # Maintainability Rating
+  alert_status="/dashboard?project=$SONAR_PROJECT"; # Quality Gate Status
+  reliability_rating="/project_badges/measure?project=$SONAR_PROJECT&metric=reliability_rating"; # Reliability Rating (A-E)
+  security_hotspots="/project_badges/measure?project=$SONAR_PROJECT&metric=security_hotspots"; # Security Hotspots. (number)
+  security_rating="/project_badges/measure?project=$SONAR_PROJECT&metric=security_rating"; # Security Rating (A-E)
+  sqale_index="/project_badges/measure?project=$SONAR_PROJECT&metric=sqale_index"; # Technical Debt
+  vulnerabilities="/project_badges/measure?project=$SONAR_PROJECT&metric=vulnerabilities"; # Number of vulnerability issues. (number)
 
   echo "${!1}"
 }

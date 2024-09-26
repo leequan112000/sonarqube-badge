@@ -80,10 +80,10 @@ setColor() {
 }
 
 # tested by sonarqube v7.9.2
-generateSVGFromSonarqube() {
+generateSonarqubeBadgeURL() {
   METRIC='coverage'
   [ ! -z $1 ] && METRIC="$1"
-  curl -sS "$SONAR_HOST_URL/api/project_badges/measure?project=$SONAR_PROJECT&metric=$METRIC&token=$SONAR_TOKEN" -o "$TARGET_DIRECTORY/${METRIC}.sonarqube.svg"
+  echo "$SONAR_HOST_URL/api/project_badges/measure?project=$SONAR_PROJECT&metric=$METRIC&token=$SONAR_TOKEN"
 }
 
 generateSVGFromShieldsIO() {
@@ -97,7 +97,6 @@ generateSVGFromShieldsIO() {
   else
     setColor $METRIC $VALUE
   fi
-
   # echo "($METRIC) ${LABEL}: $VALUE ($COLOR)"
 
   MESSAGE=$(echo "$VALUE" | sed 's/%$/%25/')
