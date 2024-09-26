@@ -75,5 +75,5 @@ runs:
             body: markdown
           });
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
         markdown: ${{ steps.result.outputs.markdown }}
