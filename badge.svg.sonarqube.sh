@@ -145,8 +145,6 @@ for METRIC in $(echo $TARGET_METRICS | sed "s/,/ /g"); do
     if [[ $TARGET_SVG_FROM == 'shields.io' ]]; then
       generateSVGFromShieldsIO $METRIC
       rm $TARGET_DIRECTORY/${METRIC}.sonarqube.svg
-    else
-      mv $TARGET_DIRECTORY/${METRIC}.sonarqube.svg $TARGET_DIRECTORY/${METRIC}.svg
     fi
   fi
 done
