@@ -1,0 +1,76 @@
+name: "SonarQube Badge"
+description: 'SonarQube Badge'
+inputs:
+  directory:
+    description: 'Directory where badges will be generated'
+    required: false
+    default: '.badges'
+  metrics:
+    description: 'Target metrics to be generated, comma-separated'
+    required: false
+    default: 'all'
+  svgFrom:
+    description: 'Source of SVG badge images'
+    type: choice
+    required: false
+    default: 'shields.io'
+    options:
+      - sonarqube
+      - shields.io
+outputs:
+  list:
+    description: 'Result list'
+    value: ${{ steps.result.outputs.list }}
+  markdown:
+    description: 'Markdown'
+    value: ${{ steps.result.outputs.markdown }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setting up inputs
+      shell: bash
+      run: |
+        # Setting up inputs
+        TARGET_DIRECTORY="${{ inputs.directory }}"
+        TARGET_METRICS="${{ inputs.metrics }}"
+        TARGET_SVG_FROM="${{ inputs.svgFrom }}"
+        echo "TARGET_DIRECTORY=$TARGET_DIRECTORY" >> $GITHUB_ENV
+        echo "TARGET_METRICS=$TARGET_METRICS" >> $GITHUB_ENV
+        echo "TARGET_SVG_FROM=$TARGET_SVG_FROM" >> $GITHUB_ENV
+
+    - name: Generate Badges
+      shell: bash
+      run: |
+        # Run badge.svg.sonarqube.sh
+        ${GITHUB_ACTION_PATH}/badge.svg.sonarqube.sh
+
+    - name: Set outputs
+      id: result
+      shell: bash
+      run: |
+        echo 'list<<EOF' >> $GITHUB_OUTPUT
+        ${GITHUB_ACTION_PATH}/print-result.sh list >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
+
+        echo 'markdown<<EOF' >> $GITHUB_OUTPUT
+        ${GITHUB_ACTION_PATH}/print-result.sh markdown >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
+
+    - name: Post comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { markdown } = process.env;
+          const { context } = require('@actions/github');
+          const octokit = require('@actions/github').getOctokit(process.env.GITHUB_TOKEN);
+
+          await octokit.rest.issues.createComment({
+            ...context.repo,
+            issue_number: context.issue.number,
+            body: markdown
+          });
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        markdown: ${{ steps.result.outputs.markdown }}
