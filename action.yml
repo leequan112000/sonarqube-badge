@@ -68,8 +68,9 @@ runs:
           const { markdown } = process.env;
 
           await github.rest.issues.createComment({
-            ...github.context.repo,
-            issue_number: github.context.issue.number,
+            owner: context.payload.repository.owner.login,
+            repo: context.payload.repository.name,
+            issue_number: context.payload.pull_request.number,
             body: markdown
           });
       env:
