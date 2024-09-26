@@ -1,6 +1,9 @@
 name: "SonarQube Badge + Comment on PR"
 description: 'SonarQube Badge'
 inputs:
+  github-token:
+    description: 'GitHub token'
+    required: true
   directory:
     description: 'Directory where badges will be generated'
     required: false
