@@ -1,4 +1,4 @@
-name: "SonarQube Badge"
+name: "SonarQube Badge + Comment on PR"
 description: 'SonarQube Badge'
 inputs:
   directory:
