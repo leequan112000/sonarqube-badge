@@ -14,7 +14,10 @@ inputs:
   sonar-badge-token:
     description: 'Sonar badge token'
     required: true
-  
+  sonar-host-url:
+    description: 'Sonar host URL'
+    required: true
+
 outputs:
   list:
     description: 'Result list'
