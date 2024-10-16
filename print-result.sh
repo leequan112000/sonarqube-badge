@@ -4,7 +4,7 @@
 [[ -z $SONAR_HOST_URL && -f "$(pwd)/sonar-project.properties" ]] && SONAR_HOST_URL=$(grep -E "^sonar.host.url" $(pwd)/sonar-project.properties | cut -c 16-)
 [ -z $SONAR_PROJECT ] && echo "SONAR_PROJECT env not found" && exit 1;
 [ -z $SONAR_HOST_URL ] && echo "SONAR_HOST_URL env not found" && exit 1;
-[ -z $TARGET_DIRECTORY ] && echo "TARGET_DIRECTORY env not found" && exit 1;
+[ -z $SONAR_TOKEN ] && echo "SONAR_TOKEN env not found" && exit 1;
 
 # remove trailing slash
 if [[ "$SONAR_HOST_URL" =~ /$ ]]; then
@@ -13,67 +13,70 @@ fi
 
 # custom label
 getLabel() {
-  bugs='bugs'; # Number of bug issues. (number)
-  code_smells='code smells'; # Total count of Code Smell issues. (number)
-  coverage='coverage'; # Coverage (percentage)
-  duplicated_lines_density='duplicated lines'; # duplicated_lines / lines * 100 (percentage)
-  ncloc='lines of code'; # Lines of code (number k,m suffix)
-  sqale_rating='maintainability'; # Maintainability Rating
-  alert_status='quality gate'; # Quality Gate Status
-  reliability_rating='reliability'; # Reliability Rating (A-E)
-  security_hotspots='security hotspots' # Security Hotspots. (number)
-  security_rating='security'; # Security Rating (A-E)
-  sqale_index='technical debt'; # Technical Debt
-  vulnerabilities='vulnerabilities'; # Number of vulnerability issues. (number)
+  bugs='Bugs'
+  code_smells='Code Smells'
+  coverage='Coverage'
+  duplicated_lines_density='Duplicated Lines (%)'
+  ncloc='Lines of Code'
+  sqale_rating='Maintainability Rating'
+  alert_status='Quality Gate Status'
+  reliability_rating='Reliability Rating'
+  security_hotspots='Security Hotspots'
+  security_rating='Security Rating'
+  sqale_index='Technical Debt'
+  vulnerabilities='Vulnerabilities'
 
   echo "${!1}"
 }
 
 # sonarqube link
 getLink() {
-  bugs="/project_badges/measure?project=$SONAR_PROJECT&metric=bugs"; # Number of bug issues. (number)
-  code_smells="/project_badges/measure?project=$SONAR_PROJECT&metric=code_smells"; # Total count of Code Smell issues. (number)
-  coverage="/project_badges/measure?project=$SONAR_PROJECT&metric=coverage"; # Coverage (percentage)
-  duplicated_lines_density="/project_badges/measure?project=$SONAR_PROJECT&metric=duplicated_lines_density"; # duplicated_lines / lines * 100 (percentage)
-  ncloc="/project_badges/measure?project=$SONAR_PROJECT&metric=ncloc"; # Lines of code (number k,m suffix)
-  sqale_rating="/project_badges/measure?project=$SONAR_PROJECT&metric=sqale_rating"; # Maintainability Rating
-  alert_status="/dashboard?project=$SONAR_PROJECT"; # Quality Gate Status
-  reliability_rating="/project_badges/measure?project=$SONAR_PROJECT&metric=reliability_rating"; # Reliability Rating (A-E)
-  security_hotspots="/project_badges/measure?project=$SONAR_PROJECT&metric=security_hotspots"; # Security Hotspots. (number)
-  security_rating="/project_badges/measure?project=$SONAR_PROJECT&metric=security_rating"; # Security Rating (A-E)
-  sqale_index="/project_badges/measure?project=$SONAR_PROJECT&metric=sqale_index"; # Technical Debt
-  vulnerabilities="/project_badges/measure?project=$SONAR_PROJECT&metric=vulnerabilities"; # Number of vulnerability issues. (number)
+  bugs="/component_measures?id=$SONAR_PROJECT&metric=bugs"
+  code_smells="/component_measures?id=$SONAR_PROJECT&metric=code_smells"
+  coverage="/component_measures?id=$SONAR_PROJECT&metric=coverage"
+  duplicated_lines_density="/component_measures?id=$SONAR_PROJECT&metric=duplicated_lines_density"
+  ncloc="/component_measures?id=$SONAR_PROJECT&metric=ncloc"
+  sqale_rating="/component_measures?id=$SONAR_PROJECT&metric=sqale_rating"
+  alert_status="/dashboard?id=$SONAR_PROJECT"
+  reliability_rating="/component_measures?id=$SONAR_PROJECT&metric=reliability_rating"
+  security_hotspots="/component_measures?id=$SONAR_PROJECT&metric=security_hotspots"
+  security_rating="/component_measures?id=$SONAR_PROJECT&metric=security_rating"
+  sqale_index="/component_measures?id=$SONAR_PROJECT&metric=sqale_index"
+  vulnerabilities="/component_measures?id=$SONAR_PROJECT&metric=vulnerabilities"
 
   echo "${!1}"
 }
 
 generateMarkdown() {
-  for f in $TARGET_DIRECTORY/*.svg; do
-    METRIC=$(basename $f .svg)
-    LABEL=$(getLabel $METRIC 2>/dev/null)
-    LINK=$(getLink $METRIC 2>/dev/null)
-    if [[ ! -z $LABEL ]]; then
-      echo "[![$LABEL](${TARGET_DIRECTORY}/${METRIC}.svg)](http${SONAR_HOST_URL:4}${LINK})"
-    fi
+  local metrics="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
+  
+  for metric in ${metrics//,/ }; do
+    LABEL=$(getLabel $metric)
+    LINK=$(getLink $metric)
+    BADGE_URL="${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_TOKEN}"
+    LINK_URL="${SONAR_HOST_URL}${LINK}"
+    echo "[![$LABEL](${BADGE_URL})](${LINK_URL})"
   done
 }
 
 generateLink() {
-  for f in $TARGET_DIRECTORY/*.svg; do
-    METRIC=$(basename $f .svg)
-    LINK=$(getLink $METRIC 2>/dev/null)
+  local metrics="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
+  
+  for metric in ${metrics//,/ }; do
+    LINK=$(getLink $metric)
     if [[ ! -z $LINK ]]; then
-      echo $LINK
+      echo "${SONAR_HOST_URL}${LINK}"
     fi
   done
 }
 
 generateList() {
-  for f in $TARGET_DIRECTORY/*.svg; do
-    METRIC=$(basename $f .svg)
-    LABEL=$(getLabel $METRIC 2>/dev/null)
+  local metrics="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
+  
+  for metric in ${metrics//,/ }; do
+    LABEL=$(getLabel $metric)
     if [[ ! -z $LABEL ]]; then
-      echo $f
+      echo "${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_TOKEN}"
     fi
   done
 }
