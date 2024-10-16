@@ -11,9 +11,9 @@ inputs:
   sonar-project:
     description: 'Sonar project key'
     required: true
-    default: ''
   sonar-badge-token:
-    
+    description: 'Sonar badge token'
+    required: true
   
 outputs:
   list:
