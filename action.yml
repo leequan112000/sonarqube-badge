@@ -1,4 +1,4 @@
-name: "SonarQube Badge + Comment on PR"
+name: "SonarQube Badge + Comment on PR (Streamlined)"
 description: 'SonarQube Badge'
 inputs:
   github-token:
@@ -42,31 +42,96 @@ runs:
         echo "SONAR_BADGE_TOKEN=$SONAR_BADGE_TOKEN" >> $GITHUB_ENV
         echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> $GITHUB_ENV
 
-    - name: Generate Badges
-      id: result
+    - name: Install dependencies
       shell: bash
       run: |
-        echo 'list<<EOF' >> $GITHUB_OUTPUT
-        ${GITHUB_ACTION_PATH}/print-result.sh list >> $GITHUB_OUTPUT
-        echo 'EOF' >> $GITHUB_OUTPUT
+        sudo apt-get update
+        sudo apt-get install -y curl
 
-        echo 'markdown<<EOF' >> $GITHUB_OUTPUT
-        ${GITHUB_ACTION_PATH}/print-result.sh markdown >> $GITHUB_OUTPUT
-        echo 'EOF' >> $GITHUB_OUTPUT
+    - name: Generate and Save Badges
+      id: generate_badges
+      shell: bash
+      run: |
+        mkdir -p badges
+        metrics="${TARGET_METRICS}"
+        IFS=',' read -ra ADDR <<< "$metrics"
+        for metric in "${ADDR[@]}"; do
+          url="${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_BADGE_TOKEN}"
+          output_file="badges/${metric}.svg"
+          curl -s "$url" -o "$output_file"
+          echo "Downloaded badge for $metric"
+        done
 
-    - name: Post comment on PR
+    - name: Post comment on PR with attached images
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
       with:
+        github-token: ${{inputs.github-token}}
         script: |
-          const { markdown } = process.env;
-
+          const https = require('https');
+          const { execSync } = require('child_process');
+          
+          function runScript(command) {
+            return execSync(`${process.env.GITHUB_ACTION_PATH}/print-result.sh ${command}`).toString().trim();
+          }
+          
+          async function fetchBadge(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, (response) => {
+                let data = [];
+                response.on('data', (chunk) => {
+                  data.push(chunk);
+                });
+                response.on('end', () => {
+                  resolve(Buffer.concat(data));
+                });
+              }).on('error', (err) => {
+                reject(err);
+              });
+            });
+          }
+          
+          async function uploadAttachment(octokit, owner, repo, issue_number, name, body) {
+            const { data } = await octokit.rest.issues.uploadAttachment({
+              owner,
+              repo,
+              issue_number,
+              name,
+              body
+            });
+            return data.url;
+          }
+          
+          const metrics = runScript('metrics');
+          
+          let markdown = "## SonarQube Analysis Results\n\n";
+          
+          for (const metric of metrics.split(',')) {
+            const url = `${process.env.SONAR_HOST_URL}/api/project_badges/measure?project=${process.env.SONAR_PROJECT}&metric=${metric}&token=${process.env.SONAR_BADGE_TOKEN}`;
+            const badge = await fetchBadge(url);
+            const attachmentUrl = await uploadAttachment(
+              github,
+              context.repo.owner,
+              context.repo.repo,
+              context.payload.pull_request.number,
+              `${metric}.svg`,
+              badge
+            );
+            
+            const label = runScript(`label ${metric}`);
+            const link = runScript(`link ${metric}`);
+            
+            markdown += `[![${label}](${attachmentUrl})](${process.env.SONAR_HOST_URL}${link})\n`;
+          }
+          
           await github.rest.issues.createComment({
-            owner: context.payload.repository.owner.login,
-            repo: context.payload.repository.name,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
             issue_number: context.payload.pull_request.number,
             body: markdown
           });
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-        markdown: ${{ steps.result.outputs.markdown }}
+        SONAR_HOST_URL: ${{ inputs.sonar-host-url }}
+        SONAR_PROJECT: ${{ inputs.sonar-project }}
+        SONAR_BADGE_TOKEN: ${{ inputs.sonar-badge-token }}
+        TARGET_METRICS: ${{ inputs.metrics }}
