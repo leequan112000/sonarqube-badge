@@ -1,15 +1,19 @@
 #!/bin/bash
-
-[[ -z $SONAR_PROJECT && -f "$(pwd)/sonar-project.properties" ]] && SONAR_PROJECT=$(grep -E "^sonar.projectKey" $(pwd)/sonar-project.properties | cut -c 18-)
-[[ -z $SONAR_HOST_URL && -f "$(pwd)/sonar-project.properties" ]] && SONAR_HOST_URL=$(grep -E "^sonar.host.url" $(pwd)/sonar-project.properties | cut -c 16-)
 [ -z $SONAR_PROJECT ] && echo "SONAR_PROJECT env not found" && exit 1;
 [ -z $SONAR_HOST_URL ] && echo "SONAR_HOST_URL env not found" && exit 1;
-[ -z $SONAR_TOKEN ] && echo "SONAR_TOKEN env not found" && exit 1;
+[ -z $SONAR_BADGE_TOKEN ] && echo "SONAR_BADGE_TOKEN env not found" && exit 1;
 
 # remove trailing slash
 if [[ "$SONAR_HOST_URL" =~ /$ ]]; then
   SONAR_HOST_URL=${SONAR_HOST_URL%?}
 fi
+
+# Default metrics if TARGET_METRICS is not set or is set to 'all'
+DEFAULT_METRICS="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
+
+# Use TARGET_METRICS if set, otherwise use DEFAULT_METRICS
+METRICS=${TARGET_METRICS:-$DEFAULT_METRICS}
+[[ "$METRICS" == "all" ]] && METRICS=$DEFAULT_METRICS
 
 # custom label
 getLabel() {
@@ -48,21 +52,17 @@ getLink() {
 }
 
 generateMarkdown() {
-  local metrics="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
-  
-  for metric in ${metrics//,/ }; do
+  for metric in ${METRICS//,/ }; do
     LABEL=$(getLabel $metric)
     LINK=$(getLink $metric)
-    BADGE_URL="${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_TOKEN}"
+    BADGE_URL="${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_BADGE_TOKEN}"
     LINK_URL="${SONAR_HOST_URL}${LINK}"
     echo "[![$LABEL](${BADGE_URL})](${LINK_URL})"
   done
 }
 
 generateLink() {
-  local metrics="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
-  
-  for metric in ${metrics//,/ }; do
+  for metric in ${METRICS//,/ }; do
     LINK=$(getLink $metric)
     if [[ ! -z $LINK ]]; then
       echo "${SONAR_HOST_URL}${LINK}"
@@ -71,12 +71,10 @@ generateLink() {
 }
 
 generateList() {
-  local metrics="alert_status,bugs,code_smells,coverage,duplicated_lines_density,ncloc,sqale_rating,reliability_rating,security_hotspots,security_rating,sqale_index,vulnerabilities"
-  
-  for metric in ${metrics//,/ }; do
+  for metric in ${METRICS//,/ }; do
     LABEL=$(getLabel $metric)
     if [[ ! -z $LABEL ]]; then
-      echo "${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_TOKEN}"
+      echo "${SONAR_HOST_URL}/api/project_badges/measure?project=${SONAR_PROJECT}&metric=${metric}&token=${SONAR_BADGE_TOKEN}"
     fi
   done
 }
