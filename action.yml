@@ -38,6 +38,9 @@ runs:
         SONAR_BADGE_TOKEN="${{ inputs.sonar-badge-token }}"
         SONAR_HOST_URL="${{ inputs.sonar-host-url }}"
         echo "TARGET_METRICS=$TARGET_METRICS" >> $GITHUB_ENV
+        echo "SONAR_PROJECT=$SONAR_PROJECT" >> $GITHUB_ENV
+        echo "SONAR_BADGE_TOKEN=$SONAR_BADGE_TOKEN" >> $GITHUB_ENV
+        echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> $GITHUB_ENV
 
     - name: Generate Badges
       id: result
